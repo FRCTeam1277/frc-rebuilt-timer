@@ -5,28 +5,93 @@ const audioShift = document.getElementById("audioShift");
 const audioEndGame = document.getElementById("audioEndGame");
 const audioSonar = document.getElementById("audioSonar");
 
+const audioElements = {
+    cavalryCharge: audioCavalryCharge,
+    buzzer: audioBuzzer,
+    threeBells: audioThreeBells,
+    shift: audioShift,
+    endGame: audioEndGame,
+    sonar: audioSonar
+};
+
+let audioPreloaded = false;
+
+function preloadAllAudio() {
+    const promises = Object.values(audioElements).map(audio => {
+        return new Promise((resolve, reject) => {
+            if (audio.readyState >= 4) {
+                resolve();
+                return;
+            }
+            
+            audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+            audio.addEventListener('error', (e) => {
+                console.error('Audio preload failed:', audio.src, e);
+                reject(new Error(`Failed to load audio: ${audio.src}`));
+            }, { once: true });
+            
+            audio.load();
+            
+            setTimeout(() => {
+                if (audio.readyState >= 3) {
+                    resolve();
+                } else {
+                    reject(new Error(`Audio preload timeout: ${audio.src}`));
+                }
+            }, 5000);
+        });
+    });
+    
+    return Promise.all(promises).then(() => {
+        audioPreloaded = true;
+        console.log('All audio preloaded successfully');
+    }).catch(error => {
+        console.error('Audio preloading failed:', error);
+        audioPreloaded = false;
+        throw error;
+    });
+}
+
+function isAudioReady() {
+    return audioPreloaded && Object.values(audioElements).every(audio => audio.readyState >= 3);
+}
+
+function playAudioImmediate(audio) {
+    if (audio.readyState >= 2) {
+        audio.currentTime = 0;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.error('Audio playback failed:', error);
+            });
+        }
+    } else {
+        console.warn('Audio not ready, skipping playback:', audio.src);
+    }
+}
+
 function matchCavalryCharge() {
-    audioCavalryCharge.play();
+    playAudioImmediate(audioCavalryCharge);
 }
 
 function matchBuzzer() {
-    audioBuzzer.play();
+    playAudioImmediate(audioBuzzer);
 }
 
 function matchThreeBells() {
-    audioThreeBells.play();
+    playAudioImmediate(audioThreeBells);
 }
 
 function matchShift() {
-    audioShift.play();
+    playAudioImmediate(audioShift);
 }
 
 function matchSonar() {
-    audioSonar.play();
+    playAudioImmediate(audioSonar);
 }
 
 function matchEndGame() {
-    audioEndGame.play();
+    playAudioImmediate(audioEndGame);
 }
 
 function killAudio() {
@@ -35,3 +100,5 @@ function killAudio() {
         audio.currentTime = 0;
     });
 }
+
+window.addEventListener('DOMContentLoaded', preloadAllAudio);

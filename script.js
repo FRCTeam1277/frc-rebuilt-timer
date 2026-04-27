@@ -86,12 +86,23 @@ const durationDisplay = document.getElementById("duration");
 
 let prevRemainingSegSec = null;
 
+// Track which audio cues have been played to prevent duplicate plays
+const playedAudioCues = new Set();
+
+function getAudioCueKey(cueName, segmentIndex) {
+    return `${cueName}_${segmentIndex}`;
+}
+
 function render() {
     const elapsed = totalElapsed();
     const current = getCurrentSegment(elapsed);
 
     if (!current) {
-        matchBuzzer();
+        const matchOverKey = getAudioCueKey('matchOver', 0);
+        if (!playedAudioCues.has(matchOverKey)) {
+            matchBuzzer();
+            playedAudioCues.add(matchOverKey);
+        }
         display.textContent = "0:00";
         phase.textContent = "Match Over";
         durationDisplay.textContent = "0";
@@ -101,6 +112,7 @@ function render() {
 
     display.textContent = formatTimeMs(current.displayMs);
     const seg = segments.find(s => s.name === current.name);
+    const segIndex = segments.indexOf(seg);
     const elapsedInSegment = elapsed - seg.cumulativeStart;
     const remainingSegSec = Math.floor((seg.duration - elapsedInSegment) / 1000);
     durationDisplay.textContent = remainingSegSec;
@@ -108,7 +120,11 @@ function render() {
     if (remainingSegSec !== prevRemainingSegSec) {
         if (remainingSegSec == totalFlashDurationSec) { // heads-up alert
             if (elapsed > 20000-totalFlashDurationSec*1000) {
-                matchSonar();
+                const sonarKey = getAudioCueKey('sonar', segIndex);
+                if (!playedAudioCues.has(sonarKey)) {
+                    matchSonar();
+                    playedAudioCues.add(sonarKey);
+                }
                 if (supportVibrate) {
                     vibrate();
                 }
@@ -117,22 +133,36 @@ function render() {
         }
 
         if (remainingSegSec == 0) {
-            switch (phase.textContent) {
+            const currentPhase = phase.textContent;
+            
+            switch (currentPhase) {
                 // force inject the upcoming phase even though technically not there yet (deviation of 1 second, the 0th second)
                 // this is for a visual seamless transition, as the colors already change
                 case "Auto":
-                    matchBuzzer();
+                    const autoBuzzerKey = getAudioCueKey('autoBuzzer', segIndex);
+                    if (!playedAudioCues.has(autoBuzzerKey)) {
+                        matchBuzzer();
+                        playedAudioCues.add(autoBuzzerKey);
+                    }
                     phase.textContent = "Delay";
                     break;
                 case "Delay":
-                    matchThreeBells();
+                    const delayBellsKey = getAudioCueKey('delayBells', segIndex);
+                    if (!playedAudioCues.has(delayBellsKey)) {
+                        matchThreeBells();
+                        playedAudioCues.add(delayBellsKey);
+                    }
                     phase.textContent = "Transition Shift";
                     break;
                 case "End Game":
                     break;
 
                 case "Transition Shift":
-                    matchShift();
+                    const transitionShiftKey = getAudioCueKey('transitionShift', segIndex);
+                    if (!playedAudioCues.has(transitionShiftKey)) {
+                        matchShift();
+                        playedAudioCues.add(transitionShiftKey);
+                    }
                     if (!AutoWinner) {
                         // if we are red and blue won auto, then we do not change colors
                         // if we are blue and red won auto, then we do not change colors
@@ -147,25 +177,41 @@ function render() {
                     }
 
                 case "Shift 1":
-                    matchShift();
+                    const shift1Key = getAudioCueKey('shift1', segIndex);
+                    if (!playedAudioCues.has(shift1Key)) {
+                        matchShift();
+                        playedAudioCues.add(shift1Key);
+                    }
                     switchHub();
                     phase.textContent = "Shift 2";
                     break;
 
                 case "Shift 2":
-                    matchShift();
+                    const shift2Key = getAudioCueKey('shift2', segIndex);
+                    if (!playedAudioCues.has(shift2Key)) {
+                        matchShift();
+                        playedAudioCues.add(shift2Key);
+                    }
                     switchHub();
                     phase.textContent = "Shift 3";
                     break;
 
                 case "Shift 3":
-                    matchShift();
+                    const shift3Key = getAudioCueKey('shift3', segIndex);
+                    if (!playedAudioCues.has(shift3Key)) {
+                        matchShift();
+                        playedAudioCues.add(shift3Key);
+                    }
                     switchHub();
                     phase.textContent = "Shift 4";
                     break;
 
                 case "Shift 4":
-                    matchEndGame();
+                    const shift4Key = getAudioCueKey('shift4', segIndex);
+                    if (!playedAudioCues.has(shift4Key)) {
+                        matchEndGame();
+                        playedAudioCues.add(shift4Key);
+                    }
                     if (!AutoWinner) {
                         // if we are red and blue won auto, we change color
                         // if we are blue and red won auto, we change color
@@ -198,7 +244,19 @@ render();
 // ----- Controls -----
 function start() {
     if (state.running) return;
-    if (totalElapsed() == 0) matchCavalryCharge();
+    
+    if (!isAudioReady()) {
+        alert('Audio is still loading. Please wait a moment and try again.');
+        return;
+    }
+    
+    if (totalElapsed() == 0) {
+        const cavalryKey = getAudioCueKey('cavalry', 0);
+        if (!playedAudioCues.has(cavalryKey)) {
+            matchCavalryCharge();
+            playedAudioCues.add(cavalryKey);
+        }
+    }
     state.running = true;
     state.startTimestamp = Date.now();
     saveState();
@@ -219,6 +277,9 @@ function reset() {
         accumulatedTime: 0
     };
     saveState();
+    
+    // Clear played audio cues so they can play again
+    playedAudioCues.clear();
     
     // Update display immediately to first segment
     const first = segments[0];
