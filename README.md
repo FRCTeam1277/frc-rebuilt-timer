@@ -36,8 +36,16 @@ npx serve .
 ```
 Then open `http://localhost:8000` (or whatever port is shown).
 
-**Deploy:**
-Push to GitHub Pages, Netlify, or any static host. No build/bundling needed — just serve the repo root as-is.
+**Deploy (single-file build):**
+```bash
+node build.js
+# Output: dist/index.html + dist/*.wav
+# Upload everything in dist/ to the same directory on your static host
+```
+The build script inlines all CSS/JS into one HTML file and flattens audio paths — just upload `dist/` contents as-is.
+
+**Deploy (full PWA):**
+Push the repo root to GitHub Pages, Netlify, or any static host. No build/bundling needed.
 
 **PWA / Offline:**
 The service worker (`sw.js`) caches all assets for offline use. After the first visit, the app works without a network connection.
