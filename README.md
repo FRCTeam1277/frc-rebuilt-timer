@@ -19,5 +19,27 @@ Refer to the [2026 Game Manual](https://firstfrc.blob.core.windows.net/frc2026/M
 ## Competition Legality
 The timer app is fully legal and compliant with Rule G302. Drive Team is allowed to use this during matches if they would like. 
 
+## Build & Run
+
+No build step required — this is a static web app (HTML + CSS + vanilla JS).
+
+**Quick start (local):**
+```bash
+# Option 1: Python
+python -m http.server 8000
+
+# Option 2: Node.js (npx, no install needed)
+npx serve .
+
+# Option 3: VS Code Live Server extension
+# Right-click index.html → "Open with Live Server"
+```
+Then open `http://localhost:8000` (or whatever port is shown).
+
+**Deploy:**
+Push to GitHub Pages, Netlify, or any static host. No build/bundling needed — just serve the repo root as-is.
+
+**PWA / Offline:**
+The service worker (`sw.js`) caches all assets for offline use. After the first visit, the app works without a network connection.
 
 [Full match Demo Video](https://rbgk.github.io/frc-rebuilt-timer/Rebuilt_Timer_demo.mp4)

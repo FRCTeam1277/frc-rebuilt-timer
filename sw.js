@@ -1,7 +1,12 @@
-const CACHE_NAME = 'pwa-cache-v2';
+const CACHE_NAME = 'pwa-cache-v3';
 const ASSETS = [
   'index.html',
   'manifest.json',
+  'style.css',
+  'audio.js',
+  'alliance.js',
+  'script.js',
+  'uiux.js',
   'audio/CavalryCharge.wav',
   'audio/Buzzer.wav',
   'audio/ThreeBells.wav',
